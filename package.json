@@ -1,0 +1,12 @@
+{
+  "name": "fab-order-form",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Envoltz customer order / request-for-quote form. Static page, no build step, no backend.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "fixture": "node tools/make-fixture.mjs"
+  },
+  "license": "UNLICENSED"
+}
