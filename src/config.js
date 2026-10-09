@@ -55,8 +55,17 @@ export function validateConfig(raw) {
     }))
     .filter(l => l.street || l.city || l.zip);
 
+  // The customer's emails from the quoter's Customers tab (only on a link made for a known
+  // customer). A contact email prefilled for this link comes first.
+  const emailRe = /^[^\s@,;<>"]+@[^\s@,;<>"]+\.[^\s@,;<>"]+$/;
+  const seenEmail = new Set();
+  const emails = [pre.email, ...(Array.isArray(raw.ems) ? raw.ems.slice(0, 20) : [])]
+    .map(e => cleanText(e, LIMITS.text))
+    .filter(e => emailRe.test(e) && !seenEmail.has(e.toLowerCase()) && seenEmail.add(e.toLowerCase()));
+
   return {
     stamp: cleanText(raw.stamp, 40),
+    emails,
     company: cleanText(raw.co, LIMITS.text) || 'Envoltz',
     returnEmail: cleanText(raw.to, LIMITS.text),
     message: cleanText(raw.msg, LIMITS.configMessage, { multiline: true }),

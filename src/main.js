@@ -9,7 +9,7 @@ import { validateOrder } from './validate.js';
 import { fileMeta, checkFile, formatBytes } from './files.js';
 import { draftKey, loadDraft, saveDraft, saveFile, loadFile, removeFile, clearDraft } from './draft.js';
 import { packOrder, orderFileName } from './pack.js';
-import { sendOrderFile } from './share.js';
+import { sendOrderFile, buildEml, downloadBlob } from './share.js';
 import { renderCustomer } from './ui-header.js';
 import { renderLines } from './ui-lines.js';
 import { renderSendBar, renderProblems, renderNotice, renderNextStep } from './ui-sendbar.js';
@@ -52,6 +52,11 @@ function restoreOrder(saved) {
   if (!/^(entered|link-\d+)$/.test(base.customer.addressSource) ||
       (/^link-(\d+)$/.test(base.customer.addressSource) && !state.config.locations[Number(base.customer.addressSource.slice(5))])) {
     base.customer.addressSource = state.config.locations.length ? 'link-0' : 'entered';
+  }
+  if (base.customer.emailSource !== 'entered' &&
+      !(base.customer.emailSource === 'list' && state.config.emails.includes(base.customer.email))) {
+    base.customer.emailSource = state.config.emails.length ? 'list' : 'entered';
+    if (state.config.emails.length) base.customer.email = state.config.emails[0];
   }
   base.lines = (Array.isArray(saved.lines) ? saved.lines : []).slice(0, LIMITS.maxLines).map(l => ({
     key: typeof l.key === 'string' ? l.key : newLine().key,
@@ -254,9 +259,23 @@ async function send() {
       company: state.order.customer.company || state.order.customer.contact, returnEmail: state.config.returnEmail,
     });
     if (result !== 'cancelled') {
+      const company = state.order.customer.company || state.order.customer.contact;
       renderNextStep($('next-step'), result, {
         fileName, sizeText, returnEmail: state.config.returnEmail, company: state.order.customer.company,
         onDone: () => { $('next-step').hidden = true; },
+        onEmail: () => {
+          const eml = buildEml({
+            to: state.config.returnEmail,
+            subject: `Order: ${company}${state.order.customer.po ? ' (' + state.order.customer.po + ')' : ''}`,
+            body: `Please find my order attached (${fileName}).
+
+${state.order.customer.contact}
+${state.order.customer.company}
+${state.order.customer.phone}`.trim(),
+            fileName, zipBytes: zip,
+          });
+          downloadBlob(new Blob([eml], { type: 'message/rfc822' }), fileName.replace(/.zip$/i, '') + '.eml');
+        },
       });
       $('next-step').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }

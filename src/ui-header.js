@@ -30,10 +30,34 @@ export function renderCustomer(container, state, onChange) {
   const rerender = () => { renderCustomer(container, state, onChange); onChange(); };
   const inp = (key, opts = {}) => textInput(c, key, { ...opts, onChange });
 
+  // Email: a dropdown of the customer's emails from the link, plus "Add a different email…"
+  // (which switches to a typed box). With no emails in the link, just the typed box.
+  let emailField;
+  const emails = config.emails || [];
+  if (emails.length) {
+    const OTHER = '__other__';
+    const select = h('select', { autocomplete: 'email', dataset: c.emailSource === 'list' ? { field: 'email' } : {} });
+    emails.forEach(e => select.appendChild(h('option', { value: e, text: e })));
+    select.appendChild(h('option', { value: OTHER, text: 'Add a different email…' }));
+    select.value = c.emailSource === 'list' && emails.includes(c.email) ? c.email : OTHER;
+    select.addEventListener('change', () => {
+      if (select.value === OTHER) { c.emailSource = 'entered'; c.email = ''; }
+      else { c.emailSource = 'list'; c.email = select.value; }
+      rerender();
+    });
+    const kids = [field('Email', select, { required: true })];
+    if (c.emailSource !== 'list') {
+      kids.push(field('Your email', inp('email', { type: 'email', autocomplete: 'email', inputmode: 'email' }), { required: true, hint: "We'll add it to your contact list for next time." }));
+    }
+    emailField = h('div', { class: 'email-stack' }, kids);
+  } else {
+    emailField = field('Email', inp('email', { type: 'email', autocomplete: 'email', inputmode: 'email' }), { required: true });
+  }
+
   const grid = h('div', { class: 'grid' }, [
     field('Company', inp('company', { autocomplete: 'organization' }), { required: needAddress }),
     field('Contact name', inp('contact', { autocomplete: 'name' }), { required: true }),
-    field('Email', inp('email', { type: 'email', autocomplete: 'email', inputmode: 'email' }), { required: true }),
+    emailField,
     field('Phone', inp('phone', { type: 'tel', autocomplete: 'tel', inputmode: 'tel' })),
     field('Your PO or reference', inp('po')),
     field('Needed by', inp('neededBy', { type: 'date', max: 10 })),

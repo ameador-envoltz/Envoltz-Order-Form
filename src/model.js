@@ -19,7 +19,9 @@ export function createOrder(config) {
     customer: {
       company: config.prefill.company || '',
       contact: config.prefill.contact || '',
-      email: config.prefill.email || '',
+      // With emails in the link the customer picks one ('list') or types another ('entered').
+      email: (config.emails && config.emails[0]) || config.prefill.email || '',
+      emailSource: config.emails && config.emails.length ? 'list' : 'entered',
       phone: config.prefill.phone || '',
       po: config.quoteRef || '',
       neededBy: '',
