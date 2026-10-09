@@ -9,7 +9,7 @@ import { validateOrder } from './validate.js';
 import { fileMeta, checkFile, formatBytes } from './files.js';
 import { draftKey, loadDraft, saveDraft, saveFile, loadFile, removeFile, clearDraft } from './draft.js';
 import { packOrder, orderFileName } from './pack.js';
-import { sendOrderFile, buildEml, downloadBlob } from './share.js';
+import { downloadBlob } from './share.js';
 import { renderCustomer } from './ui-header.js';
 import { renderLines } from './ui-lines.js';
 import { renderSendBar, renderProblems, renderNotice, renderNextStep } from './ui-sendbar.js';
@@ -248,42 +248,24 @@ async function send() {
       return;
     }
     if (zip.length > LIMITS.warnOrderBytes && !sizeAcknowledged) {
-      renderNotice($('send-notice'), `This order file is ${sizeText}. Some email systems won't accept attachments this large. You can send fewer parts per order, or try sending it anyway.`, {
-        actionText: 'Send anyway', onAction: () => { sizeAcknowledged = true; send(); },
+      renderNotice($('send-notice'), `This order file is ${sizeText}. Some email systems won't accept attachments this large. You can send fewer parts per order, or download it anyway.`, {
+        actionText: 'Download anyway', onAction: () => { sizeAcknowledged = true; send(); },
       });
       return;
     }
     renderNotice($('send-notice'), null);
 
-    const result = await sendOrderFile(new Blob([zip], { type: 'application/zip' }), fileName, {
-      company: state.order.customer.company || state.order.customer.contact, returnEmail: state.config.returnEmail,
+    downloadBlob(new Blob([zip], { type: 'application/zip' }), fileName);
+    renderNextStep($('next-step'), {
+      fileName, sizeText, returnEmail: state.config.returnEmail,
+      onDone: () => { $('next-step').hidden = true; },
     });
-    if (result !== 'cancelled') {
-      const company = state.order.customer.company || state.order.customer.contact;
-      renderNextStep($('next-step'), result, {
-        fileName, sizeText, returnEmail: state.config.returnEmail, company: state.order.customer.company,
-        onDone: () => { $('next-step').hidden = true; },
-        onEmail: () => {
-          const eml = buildEml({
-            to: state.config.returnEmail,
-            subject: `Order: ${company}${state.order.customer.po ? ' (' + state.order.customer.po + ')' : ''}`,
-            body: `Please find my order attached (${fileName}).
-
-${state.order.customer.contact}
-${state.order.customer.company}
-${state.order.customer.phone}`.trim(),
-            fileName, zipBytes: zip,
-          });
-          downloadBlob(new Blob([eml], { type: 'message/rfc822' }), fileName.replace(/.zip$/i, '') + '.eml');
-        },
-      });
-      $('next-step').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    $('next-step').scrollIntoView({ behavior: 'smooth', block: 'center' });
   } catch (e) {
     renderNotice($('send-notice'), e.message, { tone: 'error' });
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Send order';
+    btn.textContent = 'Download completed order form';
   }
 }
 

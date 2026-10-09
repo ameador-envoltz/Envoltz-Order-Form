@@ -1,6 +1,6 @@
 // Every limit and fixed value the form uses, in one place (ORDER_FORM_SCOPE.md §4.5).
 
-export const FORM_VERSION = '1.2.0';
+export const FORM_VERSION = '1.3.0';
 export const ORDER_FORMAT = 'envoltz-fab-order';
 export const SCHEMA_VERSION = 1;
 

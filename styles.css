@@ -130,7 +130,9 @@ fieldset.choices { border: 0; padding: 0; margin: 0 0 12px; display: flex; flex-
 .panel.error { background: var(--error-tint); border-color: var(--error); color: var(--text); }
 .panel.warn { background: var(--warn-tint); border-color: var(--warn); }
 .panel.next { background: var(--accent-tint); border-color: var(--accent); }
-.panel ul { margin: 0; padding-left: 20px; }
+.panel ul, .panel ol { margin: 0; padding-left: 20px; }
+.panel .steps li { margin-bottom: 4px; }
+.address-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0; }
 .panel-title { font-weight: 700; }
 .draft-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .incomplete { text-align: center; padding: 40px 16px; }
